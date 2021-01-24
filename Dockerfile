@@ -1,22 +1,24 @@
-# Test web app that returns the name of the host/pod/container servicing req
-# Linux x64
-FROM node:current-alpine
+# base image
+FROM node:12.2.0
 
-LABEL org.opencontainers.image.title="Hello Docker Learners!" \
-      org.opencontainers.image.description="Web server showing host that responded" \
-      org.opencontainers.image.authors="@arpit_s31"
+# install chrome for protractor tests
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+RUN sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+RUN apt-get update && apt-get install -yq google-chrome-stable
 
-# Create directory in container image for app code
-RUN mkdir -p /usr/src/app
+# set working directory
+WORKDIR /app
 
-# Copy app code (.) to /usr/src/app in container image
-COPY . /usr/src/app
+# add `/app/node_modules/.bin` to $PATH
+ENV PATH /app/node_modules/.bin:$PATH
 
-# Set working directory context
-WORKDIR /usr/src/app
-
-# Install dependencies from packages.json
+# install and cache app dependencies
+COPY package.json /app/package.json
 RUN npm install
+RUN npm install -g @angular/cli@7.3.9
 
-# Command for container to execute
-ENTRYPOINT [ "node", "app.js" ]
+# add app
+COPY . /app
+
+# start app
+CMD ng serve --host 0.0.0.0
